@@ -1,0 +1,82 @@
+version: '3'
+
+services:
+
+  # python:
+  #   # build: ./ python3 get_tenant_id.py &&  
+  #   image: python3:pkg_installed
+  #   command: tail -f /home/project/get_tenant_id.py
+  #   # entrypoint: /bin/bash
+  #   expose:
+  #     - "80"
+  #   ports:
+  #     - "8011:80"
+  #   volumes:
+  #     - ./:/home/project:Z
+  #   links:
+  #     - mysql
+  #     - mongo
+  #   depends_on:
+  #     - mysql
+  #     - mongo
+
+  mysql:
+    image: mysql:5.7.18
+    volumes:
+      - ./_data/mysql/datadir:/var/lib/mysql
+      #初始数据库的脚本，支持 *.sh, *.sql and *.sql.gz 
+      - ./_data/database-initial:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+  #  restart: always
+    environment:
+      #If you start your mysql container instance with a data directory that already contains 
+      #a database (specifically, a mysql subdirectory), the $MYSQL_ROOT_PASSWORD variable 
+      #should be omitted from the run command line; it will in any case be ignored, 
+      #and the pre-existing database will not be changed in any way.
+      #如果要保留之前的数据（不对之前的数据进行任何更改），注释掉这个MYSQL_ROOT_PASSWORD
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: new_hudong_db
+      MYSQL_USER: user1
+      MYSQL_PASSWORD: pass1
+
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+    #http://www.ifdattic.com/how-to-mongodb-nodejs-docker/
+    #backup data: mongodump --db  <db-name>  --out /data/dump
+    #restore data: mongorestore --db <db-name>   /data/dump/<db-name> 
+      - ./_data/mongo-dump:/data/dump
+
+  redis:
+    image: redis:4.0-alpine
+    ports:
+      - "6379:6379"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    # container_name: phpmyadmin
+    depends_on:
+        - mysql
+    # environment:
+    #   - PMA_ARBITRARY=1
+    restart: always
+    environment:
+      #If you start your mysql container instance with a data directory that already contains 
+      #a database (specifically, a mysql subdirectory), the $MYSQL_ROOT_PASSWORD variable 
+      #should be omitted from the run command line; it will in any case be ignored, 
+      #and the pre-existing database will not be changed in any way.
+      #如果要保留之前的数据（不对之前的数据进行任何更改），注释掉这个MYSQL_ROOT_PASSWORD
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: new_hudong_db
+      MYSQL_USER: user1
+      MYSQL_PASSWORD: pass1
+      PMA_HOST: mysql
+    expose:
+      - "80"
+    ports:
+      - 33066:80
+    volumes:
+      - /sessions
